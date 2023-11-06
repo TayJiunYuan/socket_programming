@@ -1,5 +1,20 @@
 /*******************************
 udp_client.c: the source file of the client in udp
+
+PROGRAM OVERVIEW
+Get Host Info
+Initialize socket with Host Info
+Send Packets and Receive Ack Loop:
+	Store File into buffer
+	Initilize Pointer to buffer
+	Send packet at pointer and increment pointer by packet length
+	Receive ACK
+		If ACK negative, decrement pointer to resend packet
+Calculate time taken
+
+HOW TO RUN
+gcc udp_client4.c -o udp_client4
+./udp_client4 127.0.0.1
 ********************************/
 
 #include "headsock.h" // Include a custom header file named "headsock.h"
@@ -29,7 +44,7 @@ int main(int argc, char *argv[])
 	}
 
 	// Get host's information
-	if ((sh = gethostbyname(argv[1])) == NULL)
+	if ((sh = gethostbyname(argv[1])) == NULL) 
 	{
 		printf("error when gethostbyname");
 		exit(0);
@@ -44,7 +59,7 @@ int main(int argc, char *argv[])
 	}
 
 	// Get the host's IP address information
-	addrs = (struct in_addr **)sh->h_addr_list;
+	addrs = (struct in_addr **)sh->h_addr_list;  //extract the host's IP address from sh
 	printf("canonical name: %s\n", sh->h_name);
 
 	// Print socket information
@@ -60,10 +75,10 @@ int main(int argc, char *argv[])
 		break;
 	}
 
-	// Initialize server address structure
+	// Initialize and specify server address structure to send to 
 	ser_addr.sin_family = AF_INET;
 	ser_addr.sin_port = htons(MYUDP_PORT);
-	memcpy(&(ser_addr.sin_addr.s_addr), *addrs, sizeof(struct in_addr));
+	memcpy(&(ser_addr.sin_addr.s_addr), *addrs, sizeof(struct in_addr));  //copy the host's IP address into the socket
 	bzero(&(ser_addr.sin_zero), 8);
 
 	// Open the file for reading
@@ -95,7 +110,7 @@ float str_cli4(FILE *fp, int sockfd, struct sockaddr *addr, int addrlen, int *le
 	int n, slen, m;
 	float time_inv = 0.0;
 	struct timeval sendt, recvt;
-	ci = 0;		//points at element of the buffer
+	ci = 0; // points at element of the buffer
 	// Move the file pointer to the end of the file to get its size
 	fseek(fp, 0, SEEK_END);
 	lsize = ftell(fp); // Get the current position (in bytes) within the file (at the end now)
@@ -138,15 +153,15 @@ float str_cli4(FILE *fp, int sockfd, struct sockaddr *addr, int addrlen, int *le
 			exit(1);
 		}
 
-		ci += slen;
+		ci += slen; // point to next packet to send
 
 		// If acknowledgment is damaged, retransmit the packet
 		m = recvfrom(sockfd, &ack, 2, 0, addr, (socklen_t *)&addrlen);
-		 printf("Ack Received\n");
+		printf("Ack Received\n");
 		if (ack.num == 2)
 		{
 			printf("Negative Ack Received\n");
-			ci -= slen; // Resend the packet
+			ci -= slen; // point back to same packet to resend the packet
 		}
 	}
 

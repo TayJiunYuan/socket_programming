@@ -1,5 +1,5 @@
 
-
+mymama
 configure: exit 0
 This file contains any messages produced by compilers while
 running configure, to aid debugging if configure makes a mistake.
@@ -2078,3 +2078,4 @@ ac_cv_target_alias=i686-pc-linux-gnu
 
 
 configure: exit 0
+ 

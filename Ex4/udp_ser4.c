@@ -1,5 +1,21 @@
 /**************************************
 udp_ser.c: the source file of the server in UDP transmission
+
+PROGRAM OVERVIEW
+Set up host info and bind to socket
+Initalize buffer with pointer
+Receive packet loop:
+	Receive data packet and put into array buffer
+	Copy array buffer to addresso pointer in buffer
+	Increment pointer by length of array buffer (n)
+	If packet is classified as negative,
+		Decrement pointer by n (throw away packet)
+		Send neg acknoledgement
+Write buffer into file
+
+HOW TO RUN
+gcc udp_ser4.c -o udp_ser4
+./udp_ser4
 **************************************/
 #include "headsock.h" // Include a custom header file named "headsock.h"
 
@@ -7,10 +23,9 @@ udp_ser.c: the source file of the server in UDP transmission
 void str_ser1(int sockfd, struct sockaddr *addr, int addrlen);
 int probability_negative_ack(int percentage);
 
-
 int main(int argc, char *argv[])
 {
-	srand((unsigned)time(NULL));  //seed the random number generator 
+	srand((unsigned)time(NULL)); // seed the random number generator
 	int sockfd;
 	struct sockaddr_in my_addr;
 
@@ -42,16 +57,18 @@ int main(int argc, char *argv[])
 	exit(0);
 }
 
-
-int probability_negative_ack(int percentage) {
-    int random_number = rand();
-    int threshold = RAND_MAX / 100 * percentage; // Calculate the threshold based on the desired percentage
-    if (random_number < threshold) {
-        // This code block will run approximately "percentage"% of the time
-        return 1; // Negative acknowledgment
-    } else {
-        return 0; // Positive acknowledgment
-    }
+int probability_negative_ack(int percentage)
+{
+	int random_number = rand();
+	int threshold = RAND_MAX / 100 * percentage; // Calculate the threshold based on the desired percentage
+	if (random_number < threshold)
+	{
+		return 1; // Negative acknowledgment
+	}
+	else
+	{
+		return 0; // Positive acknowledgment
+	}
 }
 
 // Function to handle data reception and saving it to a file
@@ -80,7 +97,7 @@ void str_ser1(int sockfd, struct sockaddr *addr, int addrlen)
 		if (recvs[n - 1] == '\0') // Check if it is the end of the file, if yes, end loop. Notes '\0' is 1 byte
 		{
 			end = 1;
-			n--; // don't count the last byte
+			//n--; // don't count the last byte
 		}
 
 		// Copy received data into the buffer
@@ -90,13 +107,12 @@ void str_ser1(int sockfd, struct sockaddr *addr, int addrlen)
 
 		if (probability_negative_ack(ERRPROB))
 		{
-			lseek -=n; //override faulty packet with resent packet
-			ack.num = 2;	//negative acknoledgement
+			lseek -= n;	 // override faulty packet with resent packet
+			ack.num = 2; // negative acknoledgement
 			printf("Negative Acknoledgement\n");
-			end = 0; //if last packet rejected, do not end loop
-			
+			end = 0; // if last packet rejected, do not end loop
 		}
-		else 
+		else
 		{
 			ack.num = 1;
 		}
@@ -104,7 +120,7 @@ void str_ser1(int sockfd, struct sockaddr *addr, int addrlen)
 		if ((n = sendto(sockfd, &ack, 2, 0, addr, addrlen)) == -1)
 		{
 			printf("Error Sending ACK\n"); // Send an acknowledgment
-			// exit(1);
+																		 // exit(1);
 		}
 	}
 
